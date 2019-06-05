@@ -17,14 +17,14 @@ import (
 // Config holds
 // config parameters.
 type Config struct {
-	Client          	*dd.Client
-	APIKey          	string
-	AppKey          	string
-	ZKAddr          	string
+	Client              *dd.Client
+	APIKey              string
+	AppKey              string
+	ZKAddr              string
 	OutputFilePrefix    string
-	JolokiaPort     	int
-	Verbose         	bool
-	DryRun          	bool
+	JolokiaPort         int
+	Verbose             bool
+	DryRun              bool
 }
 
 var config = &Config{} // :(
