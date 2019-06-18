@@ -41,13 +41,13 @@ func partitionMetrics(brokerMeta kafkazk.BrokerMetaMap) (map[string]map[string]m
 }
 
 func brokerMetrics(c *Config, brokerMeta kafkazk.BrokerMetaMap) (map[string]map[string]float64, error) {
-	query_template := "max:system.disk.free{host:%s}"
+	query_template := "sum:system.disk.free{host:%s}"
 	// Populate.
 	b := map[string]map[string]float64{}
 	for bid := range brokerMeta {
 		m := brokerMeta[bid]
 		query := fmt.Sprintf(query_template, m.Host)
-		start := time.Now().Add(-time.Duration(3600) * time.Second).Unix()
+		start := time.Now().Add(-time.Duration(60) * time.Second).Unix()
 		o, err := c.Client.QueryMetrics(start, time.Now().Unix(), query)
 		if err != nil {
 			return nil, err

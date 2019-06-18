@@ -32,6 +32,27 @@ func checkMetaAge(cmd *cobra.Command, zk kafkazk.Handler) {
 // persisted in ZooKeeper (via an external mechanism*) can be merged
 // into the metadata.
 func getBrokerMeta(cmd *cobra.Command, zk kafkazk.Handler, m bool) kafkazk.BrokerMetaMap {
+	// Get a broker map of the brokers in the current partition map.
+	// If meta data isn't being looked up, brokerMeta will be empty.
+	bmm := kafkazk.BrokerMetricsMap{}
+	bmif, _ := cmd.Flags().GetString("brokers-storage-in-file")
+	if bmif != ""  {
+		m = false
+		jsonFile, err := os.Open(bmif)
+		// if we os.Open returns an error then handle it
+		if err != nil {
+		    fmt.Printf("Error on %s",err)
+		    os.Exit(1)
+		}
+		// defer the closing of our jsonFile so that we can parse it later on
+		defer jsonFile.Close()
+		data, _ := ioutil.ReadAll(jsonFile)
+		err = json.Unmarshal(data, &bmm)
+		if err != nil {
+			fmt.Errorf("Error unmarshalling broker metrics: %s", err.Error())
+			os.Exit(1)
+		}
+	}
 	brokerMeta, errs := zk.GetAllBrokerMeta(m)
 	// If no data is returned, report and exit.
 	// Otherwise, it's possible that complete
@@ -44,33 +65,14 @@ func getBrokerMeta(cmd *cobra.Command, zk kafkazk.Handler, m bool) kafkazk.Broke
 		}
 		os.Exit(1)
 	}
-	// Get a broker map of the brokers in the current partition map.
-	// If meta data isn't being looked up, brokerMeta will be empty.
-	bmif, _ := cmd.Flags().GetString("brokers-storage-in-file")
-	if bmif != ""  {
-		jsonFile, err := os.Open(bmif)
-		// if we os.Open returns an error then handle it
-		if err != nil {
-		    fmt.Printf("Error on %s",err)
-		    os.Exit(1)
-		}
-		// defer the closing of our jsonFile so that we can parse it later on
-		defer jsonFile.Close()
-		data, _ := ioutil.ReadAll(jsonFile)
-		bmm := kafkazk.BrokerMetricsMap{}
-		err = json.Unmarshal(data, &bmm)
-		if err != nil {
-			fmt.Errorf("Error unmarshalling broker metrics: %s", err.Error())
-			os.Exit(1)
-		}
-		// Populate each broker with
-		// metric data.
-		for bid := range brokerMeta {
-			m, exists := bmm[bid]
-			if exists {
-				brokerMeta[bid].StorageFree = m.StorageFree
-				brokerMeta[bid].MetricsIncomplete = false
-			}
+
+	// Populate each broker with
+	// metric data.
+	for bid := range brokerMeta {
+		bm, exists := bmm[bid]
+		if exists {
+			brokerMeta[bid].StorageFree = bm.StorageFree
+			brokerMeta[bid].MetricsIncomplete = false
 		}
 	}
 
@@ -96,11 +98,7 @@ func ensureBrokerMetrics(cmd *cobra.Command, bm kafkazk.BrokerMap, bmm kafkazk.B
 // primarily partition size metrics data used for the storage
 // placement strategy.
 func getPartitionMeta(cmd *cobra.Command, zk kafkazk.Handler) kafkazk.PartitionMetaMap {
-	partitionMeta, err := zk.GetAllPartitionMeta()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	partitionMeta := kafkazk.NewPartitionMetaMap()
 	// Get a the partitionMetaMap from input file
 	psif, _ := cmd.Flags().GetString("partitions-size-in-file")
 	if psif != ""  {
@@ -116,6 +114,13 @@ func getPartitionMeta(cmd *cobra.Command, zk kafkazk.Handler) kafkazk.PartitionM
 		err = json.Unmarshal(data, &partitionMeta)
 		if err != nil {
 			fmt.Errorf("Error unmarshalling broker metrics: %s", err.Error())
+			os.Exit(1)
+		}
+	} else {
+		var err error
+		partitionMeta, err = zk.GetAllPartitionMeta()
+		if err != nil {
+			fmt.Println(err)
 			os.Exit(1)
 		}
 	}
