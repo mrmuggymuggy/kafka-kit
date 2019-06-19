@@ -56,8 +56,7 @@ func rebuild(cmd *cobra.Command, _ []string) {
 	fr, _ := cmd.Flags().GetBool("force-rebuild")
 	sa, _ := cmd.Flags().GetBool("sub-affinity")
 	m, _ := cmd.Flags().GetBool("use-meta")
-	bsif, _ := cmd.Flags().GetString("brokers-storage-in-file")
-	psif, _ := cmd.Flags().GetString("partitions-size-in-file")
+
 	switch {
 	case ms == "" && t == "":
 		fmt.Println("\n[ERROR] must specify either --topics or --map-string")
@@ -106,9 +105,7 @@ func rebuild(cmd *cobra.Command, _ []string) {
 	// Fetch broker metadata.
 	var withMetrics bool
 	if cmd.Flag("placement").Value.String() == "storage" {
-		if bsif == "" || psif == "" {
-			checkMetaAge(cmd, zk)
-		}
+		checkMetaAge(cmd, zk)
 		withMetrics = true
 	}
 
