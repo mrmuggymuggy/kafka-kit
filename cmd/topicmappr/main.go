@@ -1,6 +1,6 @@
 package main
 
-import "kafka-kit/cmd/topicmappr/commands"
+import "github.com/mrmuggymuggy/kafka-kit/cmd/topicmappr/commands"
 
 func main() {
 	commands.Execute()
