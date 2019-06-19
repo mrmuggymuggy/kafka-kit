@@ -13,6 +13,11 @@ import (
 )
 
 func checkMetaAge(cmd *cobra.Command, zk kafkazk.Handler) {
+	bsif, _ := cmd.Flags().GetString("brokers-storage-in-file")
+	psif, _ := cmd.Flags().GetString("partitions-size-in-file")
+	if bsif != "" || psif != "" {
+		return
+	}
 	age, err := zk.MaxMetaAge()
 	if err != nil {
 		fmt.Printf("Error fetching metrics metadata: %s\n", err)
