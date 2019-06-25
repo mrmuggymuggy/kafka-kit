@@ -24,7 +24,10 @@ func partitionMetrics(brokerMeta kafkazk.BrokerMetaMap) (map[string]map[string]m
 		if err != nil {
 			fmt.Println(err)
 		}
-		partitionMap := resp.(map[string]interface{})
+		var partitionMap map[string]interface{}
+		if resp != nil {
+			partitionMap = resp.(map[string]interface{})
+		}
 		for key, value := range partitionMap {
 			topic := r_topic.FindStringSubmatch(key)[1]
 			partition := r_partition.FindStringSubmatch(key)[1]
